@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -38,7 +39,10 @@ public class JpaProperty {
     private Long price;
 
     @Column(name = "is_deleted")
-    private boolean isDeleted;
+    private boolean isDeleted = false;
+
+    @Column(name = "dateofcreation")
+    private Date date;
 
     public Property toDomain()
     {
@@ -50,6 +54,7 @@ public class JpaProperty {
                 .isAvailable(this.isAvailable)
                 .price(this.price)
                 .isDeleted(this.isDeleted)
+                .date(this.date)
                 .build();
     }
 
@@ -63,6 +68,7 @@ public class JpaProperty {
                 .isAvailable(property.isAvailable())
                 .price(property.getPrice())
                 .isDeleted(property.isDeleted())
+                .date(property.getDate())
                 .build();
     }
 

@@ -19,17 +19,18 @@ public class PropertyService {
 
     public PropertyDTO createProperty(PropertyDTO propertyDTO)
     {
+        Property property = propertyDTO.toDomain();
         if(propertyRepository.existsByName(propertyDTO.getName()))
         {
             throw new BusinessException("Ya existe una propiedad registrada con el mismo nombre");
         }
 
-        if (!isValidLocation(propertyDTO.getLocation()))
+        if (!property.isValidLocation(propertyDTO.getLocation()))
         {
             throw new BusinessException("La ubicación que estás tratando de registrar es completamente inválida.");
         }
 
-        if (isPriceValidForLocation(propertyDTO))
+        if (property.isPriceValidForLocation(propertyDTO))
         {
             throw new BusinessException("El precio de la propiedad no cumple con los requisitos");
         }
@@ -37,19 +38,6 @@ public class PropertyService {
         Property newProperty = propertyDTO.toDomain();
         Property propertyCreated = propertyRepository.save(newProperty);
         return PropertyDTO.fromDomain(propertyCreated);
-    }
-
-    private boolean isValidLocation(String location)
-    {
-        return List.of("Medellin", "Bogota", "Cali", "Cartagena").contains(location);
-    }
-
-    private boolean isPriceValidForLocation(PropertyDTO propertyDTO)
-    {
-        if ("Bogota".equals(propertyDTO.getLocation()) || "Cali".equals(propertyDTO.getLocation())) {
-            return propertyDTO.getPrice() <= 2000000;
-        }
-        return false;
     }
 
     public List<PropertyDTO> listProperties(double minPrice, double maxPrice) {
@@ -68,10 +56,11 @@ public class PropertyService {
         if (property == null)
         {
             throw new BusinessException("La propiedad con el ID especificado no ha sido encontrada");
+        } else if (property.lessTo30())
+        {
+            property.setDeleted(true);
+            propertyRepository.save(property);
         }
-
-        property.setDeleted(true);
-        propertyRepository.save(property);
     }
 
 
@@ -87,56 +76,21 @@ public class PropertyService {
         return PropertyDTO.fromDomain(updatedProperty);
     }
 
-    public PropertyDTO editProperty(PropertyDTO propertyDTO) throws BusinessException {
-        // Obtener la propiedad existente desde la base de datos
-        Property existingProperty = propertyRepository.findById(propertyDTO.getPropertyId());
-
-        // Verificar si la propiedad existe
-        if (existingProperty == null) {
-            throw new BusinessException("La propiedad con el ID " + propertyDTO.getPropertyId() + " no se encontró");
+    public PropertyDTO editProperty(PropertyDTO propertyDTO) throws BusinessException
+    {
+        Property propertyToEdit = propertyDTO.toDomain();
+        Property existingProperty = propertyRepository.findById(propertyToEdit.getPropertyId());
+        if (Boolean.TRUE.equals(!existingProperty.isAvailable()) && !existingProperty.getLocation().equals(propertyToEdit.getLocation()))
+        {
+            throw new BusinessException("No se puede mdoificar la ubicación de una propiedad ya arrendada");
         }
-
-        // Verificar si la propiedad ya fue arrendada
-        if (!existingProperty.isAvailable()) {
-            throw new BusinessException("No se puede modificar una propiedad que ya fue arrendada");
+        if (Boolean.TRUE.equals(!existingProperty.isAvailable()) && !existingProperty.getPrice().equals(propertyToEdit.getPrice()))
+        {
+            throw new BusinessException("No se puede modificar el precio de una propiedad que está arrendada");
         }
-
-        // Validar que ningún campo esté vacío o nulo
-        if (isNullOrEmpty(propertyDTO.getName()) || isNullOrEmpty(propertyDTO.getLocation()) ||
-                propertyDTO.getPrice() == null || isNullOrEmpty(propertyDTO.getPicture())) {
-            throw new BusinessException("Todos los campos son requeridos para modificar una propiedad");
-        }
-
-        // Validar que no se modifique la ubicación si la propiedad ya fue arrendada
-        if (!existingProperty.getLocation().equals(propertyDTO.getLocation())) {
-            throw new BusinessException("No se puede modificar la ubicación de una propiedad arrendada");
-        }
-
-        // Validar que no se modifique el precio si la propiedad ya fue arrendada
-        if (!existingProperty.getPrice().equals(propertyDTO.getPrice())) {
-            throw new BusinessException("No se puede modificar el precio de una propiedad arrendada");
-        }
-
-        // Validar que el precio no sea menor al estipulado por ubicación
-        if (("Bogotá".equals(propertyDTO.getLocation()) || "Cali".equals(propertyDTO.getLocation())) &&
-                propertyDTO.getPrice() < 2000000) {
-            throw new BusinessException("El precio para propiedades en Bogotá o Cali no puede ser menor a 2'000.000");
-        }
-
-        // Actualizar los campos de la propiedad
-        existingProperty.setName(propertyDTO.getName());
-        existingProperty.setLocation(propertyDTO.getLocation());
-        existingProperty.setPrice(propertyDTO.getPrice());
-        existingProperty.setPicture(propertyDTO.getPicture());
-        existingProperty.setAvailable(propertyDTO.isAvailable());
-
-        Property updatedProperty = propertyRepository.save(existingProperty);
-
-        return PropertyDTO.fromDomain(updatedProperty);
-    }
-
-    private boolean isNullOrEmpty(String str) {
-        return str == null || str.isEmpty();
+        propertyToEdit.isPriceValidForLocation(propertyDTO);
+        Property editedProperty = propertyRepository.createNewOrUpdateProperty(propertyToEdit);
+        return PropertyDTO.fromDomain(editedProperty);
     }
 
 }

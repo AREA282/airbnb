@@ -16,5 +16,5 @@ public interface PropertyRepository {
     boolean existsByName(String name);
     @Query("SELECT p FROM properties p WHERE p.isAvailable = true AND p.price BETWEEN :minPrice AND :maxPrice")
     List<Property> findAvailablePropertiesByPriceRange(@Param("minPrice") double minPrice, @Param("maxPrice") double maxPrice);
-
+    Property createNewOrUpdateProperty(Property property);
 }

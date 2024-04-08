@@ -60,9 +60,22 @@ public class PropertyRepositoryJPAImp implements PropertyRepository {
             return JpaProperty.createToDomainList(list);
         }catch (Exception exception)
         {
-            log.error("Ocurrió un error al intentar consultar las pripiedades", exception);
+            log.error("Ocurrió un error al intentar consultar las propiedades", exception);
             throw new DataBaseException("Ocurrió un error al intentar consultar las pripiedades");
         }
 
+    }
+
+    @Override
+    public Property createNewOrUpdateProperty(Property property) {
+        try
+        {
+            JpaProperty propertyToSave = propertyRepositoryJPA.save(JpaProperty.fromDomain(property));
+            return propertyToSave.toDomain();
+        }catch (Exception exception)
+        {
+            log.error("Ocurrió un error al intentar guardar la propiedad", exception);
+            throw new DataBaseException("Ocurrió un error al intentar guardar la propiedad");
+        }
     }
 }

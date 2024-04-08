@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+import java.util.Date;
 import java.util.List;
 
 @Data
@@ -39,7 +40,9 @@ public class PropertyDTO {
     private Long price;
 
     @NotNull(message = "Cannot be null")
-    private boolean isDeleted;
+    private boolean isDeleted = false;
+
+    private Date date;
 
     public Property toDomain()
     {
@@ -51,6 +54,7 @@ public class PropertyDTO {
                 .isAvailable(this.isAvailable)
                 .price(this.price)
                 .isDeleted(this.isDeleted)
+                .date(this.date)
                 .build();
     }
 
@@ -64,6 +68,7 @@ public class PropertyDTO {
                 .isAvailable(property.isAvailable())
                 .price(property.getPrice())
                 .isDeleted(property.isDeleted())
+                .date(property.getDate())
                 .build();
     }
 
