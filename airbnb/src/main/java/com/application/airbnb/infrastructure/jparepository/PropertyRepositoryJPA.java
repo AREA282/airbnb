@@ -12,7 +12,7 @@ import java.util.List;
 @Repository
 public interface PropertyRepositoryJPA extends JpaRepository<JpaProperty, Long> {
     boolean existsByName(String name);
-    @Query("SELECT p FROM JpaProperty p WHERE p.isAvailable = true AND p.price BETWEEN :minPrice AND :maxPrice")
+    @Query("SELECT p FROM JpaProperty p WHERE p.isAvailable = true AND isDeleted = false AND p.price BETWEEN :minPrice AND :maxPrice")
     List<JpaProperty> findAvailablePropertiesByPriceRange(@Param("minPrice") double minPrice, @Param("maxPrice") double maxPrice);
 
 }
