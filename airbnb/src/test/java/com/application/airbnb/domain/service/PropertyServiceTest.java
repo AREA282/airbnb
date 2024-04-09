@@ -115,14 +115,15 @@ class PropertyServiceTest {
     }
 
     @Test
-    void testDeleteProperty_Success() {
+    void deleteProperty_PropertyExistsAndIsNotDeleted_LessTo30_ReturnsDeletedProperty() {
         // Given
         Long propertyId = 1L;
         Property property = new Property();
         property.setPropertyId(propertyId);
         property.setDeleted(false);
-        // Mock repository method
+
         when(propertyRepository.findById(propertyId)).thenReturn(property);
+        when(property.lessTo30()).thenReturn(true);
 
         // When
         propertyService.deleteProperty(propertyId);
@@ -144,5 +145,31 @@ class PropertyServiceTest {
         BusinessException exception = assertThrows(BusinessException.class, () -> propertyService.deleteProperty(propertyId));
         Assertions.assertEquals("La propiedad con el ID especificado no ha sido encontrada", exception.getMessage());
         verify(propertyRepository, never()).save(any());
+    }
+
+    @Test
+    void editProperty_PropertyExistsAndIsAvailable_LocationAndPriceNotModified_ReturnsEditedPropertyDTO() throws BusinessException {
+        // Given
+        long propertyId = 1L;
+        PropertyDTO propertyDTO = new PropertyDTO();
+        propertyDTO.setPropertyId(propertyId);
+        propertyDTO.setLocation("Bogota");
+        propertyDTO.setPrice(2000000L);
+
+        Property existingProperty = new Property();
+        existingProperty.setPropertyId(propertyId);
+        existingProperty.setLocation("Bogota");
+        existingProperty.setPrice(2000000L);
+
+        when(propertyRepository.findById(propertyId)).thenReturn(existingProperty);
+        when(propertyRepository.createNewOrUpdateProperty(existingProperty)).thenReturn(existingProperty);
+
+        // When
+        PropertyDTO editedPropertyDTO = propertyService.editProperty(propertyDTO);
+
+        // Then
+        Assertions.assertNotNull(editedPropertyDTO);
+        Assertions.assertEquals(existingProperty.getLocation(), editedPropertyDTO.getLocation());
+        Assertions.assertEquals(existingProperty.getPrice(), editedPropertyDTO.getPrice());
     }
 }
